@@ -1,21 +1,45 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import img from "../../assets/images/login/login.svg";
 import { useContext } from "react";
 import { AuthContext } from "../../Providers/AuthProvider";
+import SocialLogin from "../Shared/SocialLogin/SocialLogin";
 
 const Login = () => {
   const { SignIn } = useContext(AuthContext);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const from = location.state?.from?.pathname || "/";
+
   const handleLogin = (event) => {
     event.preventDefault();
     const form = event.target;
     const email = form.email.value;
     const password = form.password.value;
-    console.log(email, password);
+    // console.log(email, password);
 
     SignIn(email, password)
       .then((result) => {
-        const loggedUser = result.user;
+        const user = result.user;
+        const loggedUser = {
+          email: user.email,
+        };
         console.log(loggedUser);
+
+        fetch("http://localhost:5000/jwt", {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+          },
+          body: JSON.stringify(loggedUser),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            console.log("jwt response", data);
+            // Warning: local storage is not the bes (second best place) to store access token
+            localStorage.setItem("car-access-token", data.token);
+            navigate(from, { replace: true });
+          });
       })
       .catch((error) => console.log(error));
   };
@@ -74,6 +98,7 @@ const Login = () => {
                     Sign Up
                   </Link>
                 </p>
+                <SocialLogin></SocialLogin>
               </div>
             </div>
           </div>
